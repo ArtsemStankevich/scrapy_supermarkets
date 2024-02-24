@@ -58,7 +58,6 @@ class SupermarketSpider(scrapy.Spider):
 
     start_urls = StartURLSFromFile().start_urls
     
-    print(start_urls)
     def parse(self, response):
         for data in business_data:
             url_part = data['url_part']
@@ -75,35 +74,43 @@ class SupermarketSpider(scrapy.Spider):
             city, address = self.extract_city_and_address(full_address)
             map_link = shop.css('td:nth-child(3) a::attr(href)').get()
 
-            yield {
-                'business': business_data['name'],
-                'opening_hours': opening_hours,
-                'address': address,
-                'city': city,
-                'map_link': map_link
-            }
+            try:
+                supermarkets = BusinessRecord(
+                    business=business_data['name'],
+                    opening_hours=opening_hours,
+                    address=address,
+                    city=city,
+                    map_link=map_link
+                )
+                yield supermarkets.dict()
+            except ValidationError as e:
+                self.logger.error(e)
 
     # Format z słownikami
     '''
-        def parse_business(self, response, business_data):
-            items = []
-            for shop in response.css('div.stores.controller.show.shared table.striped.near-stores-table tbody tr'):
-                opening_hours = shop.css('td:nth-child(1)::text').get().strip()
-                full_address = shop.css('td:nth-child(2) a::text').get().strip()
-                city, address = self.extract_city_and_address(full_address)
-                map_link = shop.css('td:nth-child(3) a::attr(href)').get()
+    def parse_business(self, response, business_data):
+        items = []
+        for shop in response.css('div.stores.controller.show.shared table.striped.near-stores-table tbody tr'):
+            opening_hours = shop.css('td:nth-child(1)::text').get().strip()
+            full_address = shop.css('td:nth-child(2) a::text').get().strip()
+            city, address = self.extract_city_and_address(full_address)
+            map_link = shop.css('td:nth-child(3) a::attr(href)').get()
 
-                item = {
-                    'opening_hours': opening_hours,
-                    'address': address,
-                    'city': city,
-                    'map_link': map_link
-                }
-                items.append(item)
+            try:
+                item = BusinessRecord(
+                    business=business_data['name'],
+                    opening_hours=opening_hours,
+                    address=address,
+                    city=city,
+                    map_link=map_link
+                )
+            except ValidationError as e:
+                self.logger.error(e)
+            items.append(item)
 
-            # Utwórz słownik, gdzie nazwa biznesu jest kluczem, a zestaw słowników jest wartością
-            result = {business_data['name']: items}
-            yield result
+        # Utwórz słownik, gdzie nazwa biznesu jest kluczem, a zestaw słowników jest wartością
+        result = {business_data['name']: items}
+        yield result
     '''
 
     def extract_city_and_address(self, full_address):
