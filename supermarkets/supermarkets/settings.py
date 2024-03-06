@@ -12,6 +12,10 @@ BOT_NAME = "supermarkets"
 SPIDER_MODULES = ["supermarkets.spiders"]
 NEWSPIDER_MODULE = "supermarkets.spiders"
 
+ITEM_PIPELINES = {
+    'supermarkets.pipelines.ValidationPipeline': 100,
+}
+
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "supermarkets (+http://www.yourdomain.com)"

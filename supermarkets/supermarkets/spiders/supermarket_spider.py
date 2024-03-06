@@ -1,8 +1,6 @@
 import scrapy
 import re
 import json
-from pydantic import BaseModel, validator
-from ..validators import validate_fields, validate_opening_hours
 
 business_data = [
     {'url_part': 'lidl', 'name': 'Lidl'},
@@ -30,17 +28,6 @@ business_data = [
     {'url_part': 'aldi', 'name': 'Aldi'}
 ]
 
-
-class BusinessRecord(BaseModel):
-    business: str
-    opening_hours: str
-    address: str
-    city: str
-    map_link: str
-
-    _validate_fields = validator('business', 'address', 'city', 'map_link')(validate_fields)
-    _validate_opening_hours = validator('opening_hours')(validate_opening_hours)
-
 class StartURLSFromFile:
     def __init__(self):
         with open("start_urls.txt", "r") as f:
@@ -65,53 +52,21 @@ class SupermarketSpider(scrapy.Spider):
             last_part_of_url = last_part_of_url.split('.')[0]
             if last_part_of_url == url_part:
                 yield from self.parse_business(response, business_data=data)
-
     def parse_business(self, response, business_data):
-        print(response.css, "AA")
         for shop in response.css('div.stores.controller.show.shared table.striped.near-stores-table tbody tr'):
             opening_hours = shop.css('td:nth-child(1)::text').get().strip()
             full_address = shop.css('td:nth-child(2) a::text').get().strip()
             city, address = self.extract_city_and_address(full_address)
             map_link = shop.css('td:nth-child(3) a::attr(href)').get()
 
-            try:
-                supermarkets = BusinessRecord(
-                    business=business_data['name'],
-                    opening_hours=opening_hours,
-                    address=address,
-                    city=city,
-                    map_link=map_link
-                )
-                yield supermarkets.dict()
-            except ValidationError as e:
-                self.logger.error(e)
+            yield {
+                'business':business_data['name'],
+                'opening_hours':opening_hours,
+                'address':address,
+                'city':city,
+                'map_link':map_link
+            }
 
-    # Format z słownikami
-    '''
-    def parse_business(self, response, business_data):
-        items = []
-        for shop in response.css('div.stores.controller.show.shared table.striped.near-stores-table tbody tr'):
-            opening_hours = shop.css('td:nth-child(1)::text').get().strip()
-            full_address = shop.css('td:nth-child(2) a::text').get().strip()
-            city, address = self.extract_city_and_address(full_address)
-            map_link = shop.css('td:nth-child(3) a::attr(href)').get()
-
-            try:
-                item = BusinessRecord(
-                    business=business_data['name'],
-                    opening_hours=opening_hours,
-                    address=address,
-                    city=city,
-                    map_link=map_link
-                )
-            except ValidationError as e:
-                self.logger.error(e)
-            items.append(item)
-
-        # Utwórz słownik, gdzie nazwa biznesu jest kluczem, a zestaw słowników jest wartością
-        result = {business_data['name']: items}
-        yield result
-    '''
 
     def extract_city_and_address(self, full_address):
         match = re.match(r'([^,]+),(.+)', full_address)
