@@ -22,5 +22,6 @@ class ValidationPipeline:
             item['opening_hours'] = validate_opening_hours(item['opening_hours'])
         except ValueError as e:
             print(f"Validation error: {e}")
+            print(item['url'])
             raise DropItem(f"Validation error: {e}")
         return item

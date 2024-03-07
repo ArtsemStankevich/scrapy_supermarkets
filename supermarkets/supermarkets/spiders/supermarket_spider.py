@@ -64,7 +64,8 @@ class SupermarketSpider(scrapy.Spider):
                 'opening_hours':opening_hours,
                 'address':address,
                 'city':city,
-                'map_link':map_link
+                'map_link':map_link,
+                'url': response.url
             }
 
 
